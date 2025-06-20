@@ -56,11 +56,12 @@ def convert_stp_to_stl():
             # Import STP file using CadQuery
             workplane = importers.importStep(stp_path)
             
-            mesh_opts = dict(tolerance=0.05,  # 50 µm - good enough for FDM prints
-                            angularTolerance=0.3,
-                            parallel=True)
+            # mesh_opts = dict(tolerance=0.05,  # 50 µm - good enough for FDM prints
+                            # angularTolerance=0.3,
+                            # parallel=True)
 
-            exporters.export(workplane, stl_path, opt=mesh_opts)
+            # exporters.export(workplane, stl_path, opt=mesh_opts)
+            exporters.export(workplane, stl_path)
             
             # Clean up the original STP file
             os.remove(stp_path)
