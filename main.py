@@ -56,8 +56,11 @@ def convert_stp_to_stl():
             # Import STP file using CadQuery
             workplane = importers.importStep(stp_path)
             
-            # Export as STL
-            exporters.export(workplane, stl_path)
+            mesh_opts = dict(tolerance=0.05,  # 50 µm - good enough for FDM prints
+                            angularTolerance=0.3,
+                            parallel=True)
+
+            exporters.export(workplane, stl_path, opt=mesh_opts)
             
             # Clean up the original STP file
             os.remove(stp_path)
@@ -91,64 +94,6 @@ def convert_stp_to_stl():
     except Exception as e:
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
-@app.route('/convert-url', methods=['POST'])
-def convert_stp_to_stl_return_url():
-    """Alternative endpoint that returns a URL to download the converted file"""
-    try:
-        # Check if file is present
-        if 'file' not in request.files:
-            return jsonify({'error': 'No file provided'}), 400
-        
-        file = request.files['file']
-        
-        if file.filename == '':
-            return jsonify({'error': 'No file selected'}), 400
-        
-        if not allowed_file(file.filename):
-            return jsonify({'error': 'Invalid file type. Only .stp and .step files are allowed'}), 400
-        
-        # Generate unique filenames
-        unique_id = str(uuid.uuid4())
-        original_filename = secure_filename(file.filename)
-        
-        # Create temporary file paths
-        stp_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{unique_id}_{original_filename}")
-        stl_filename = f"{unique_id}_{original_filename.rsplit('.', 1)[0]}.stl"
-        stl_path = os.path.join(app.config['UPLOAD_FOLDER'], stl_filename)
-        
-        # Save the uploaded STP file
-        file.save(stp_path)
-        
-        try:
-            # Import STP file using CadQuery
-            workplane = importers.importStep(stp_path)
-            
-            # Export as STL
-            exporters.export(workplane, stl_path)
-            
-            # Clean up the original STP file
-            os.remove(stp_path)
-            
-            # Return the download URL
-            return jsonify({
-                'success': True,
-                'download_url': f'/download/{stl_filename}',
-                'filename': stl_filename
-            })
-            
-        except Exception as conversion_error:
-            # Clean up files on conversion error
-            if os.path.exists(stp_path):
-                os.remove(stp_path)
-            if os.path.exists(stl_path):
-                os.remove(stl_path)
-            
-            return jsonify({
-                'error': f'Conversion failed: {str(conversion_error)}'
-            }), 500
-            
-    except Exception as e:
-        return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 @app.route('/download/<filename>')
 def download_file(filename):
