@@ -56,8 +56,12 @@ def convert_stp_to_stl():
             # Import STP file using CadQuery
             workplane = importers.importStep(stp_path)
             
-            # Export as STL
-            exporters.export(workplane, stl_path)
+            exporters.export(
+                workplane, 
+                stl_path,
+                tolerance=0.1,         # Linear tolerance: how far the mesh can be from the true surface
+                angularTolerance=0.5   # Angular tolerance in radians
+            )
             
             # Clean up the original STP file
             os.remove(stp_path)
