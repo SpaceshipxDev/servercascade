@@ -64,13 +64,16 @@ def convert_stp_to_stl():
             # exporters.export(workplane, stl_path)
 
             # VERY coarse mesh – good enough for a thumbnail/preview
-            exporters.export(
-                workplane,
+            # Wrong (uses exporters.export → kw gets filtered out)
+            exporters.export(workplane, stl_path, tolerance=0.1, angularTolerance=0.5, relative=False)
+
+            # Correct – call the STL routine directly
+            workplane.val().exportStl(
                 stl_path,
-                tolerance=0.4,          # 0.4 mm linear deflection
-                angularTolerance=0.8,   # ~46 °
-                # relative=False,         # use *absolute* tolerance everywhere
-                parallel=True           # still honoured if OCCT was built with TBB
+                tolerance=0.4,          # coarse = fast
+                angularTolerance=0.8,   # radians
+                relative=False,         # absolute deflection everywhere
+                parallel=True           # honoured only if OCCT was built with TBB/OpenMP
             )
             
             # Clean up the original STP file
