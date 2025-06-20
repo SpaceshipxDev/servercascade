@@ -56,25 +56,8 @@ def convert_stp_to_stl():
             # Import STP file using CadQuery
             workplane = importers.importStep(stp_path)
             
-            # mesh_opts = dict(tolerance=0.05,  # 50 µm - good enough for FDM prints
-                            # angularTolerance=0.3,
-                            # parallel=True)
-
-            # exporters.export(workplane, stl_path, opt=mesh_opts)
-            # exporters.export(workplane, stl_path)
-
-            # VERY coarse mesh – good enough for a thumbnail/preview
-            # Wrong (uses exporters.export → kw gets filtered out)
-            exporters.export(workplane, stl_path, tolerance=0.1, angularTolerance=0.5, relative=False)
-
-            # Correct – call the STL routine directly
-            workplane.val().exportStl(
-                stl_path,
-                tolerance=0.4,          # coarse = fast
-                angularTolerance=0.8,   # radians
-                relative=False,         # absolute deflection everywhere
-                parallel=True           # honoured only if OCCT was built with TBB/OpenMP
-            )
+            # Export as STL
+            exporters.export(workplane, stl_path)
             
             # Clean up the original STP file
             os.remove(stp_path)
@@ -109,36 +92,6 @@ def convert_stp_to_stl():
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 
-@app.route('/download/<filename>')
-def download_file(filename):
-    """Download endpoint for converted files"""
-    try:
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        
-        if not os.path.exists(file_path):
-            return jsonify({'error': 'File not found'}), 404
-        
-        def remove_file_after_send(response):
-            try:
-                os.remove(file_path)
-            except Exception:
-                pass
-            return response
-        
-        response = send_file(
-            file_path,
-            as_attachment=True,
-            download_name=filename,
-            mimetype='application/octet-stream'
-        )
-        
-        # Schedule file deletion after sending
-        response.call_on_close(lambda: remove_file_after_send(response))
-        
-        return response
-        
-    except Exception as e:
-        return jsonify({'error': f'Download failed: {str(e)}'}), 500
 
 if __name__ == '__main__':
     print("Starting STP to STL conversion server...")
